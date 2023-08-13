@@ -106,6 +106,79 @@ mc admin info local
 mc ls -r local
 ```
 
+## Project Demo on GCP (Ubuntu)
+1. Create virtual machine instances on the Google Cloud Platform
+![1](https://github.com/LaansDole/unix-sysadm-MinIO/assets/88642920/c23208e8-e7ce-4415-b947-a1341d34aca4)
 
+2. Attach block devices to instances (repeat 2 times per instance)
+![2](https://github.com/LaansDole/unix-sysadm-MinIO/assets/88642920/0a764bf2-5d8f-461a-b19d-3172bd89e29f)
 
+3. Elevate to Superuser (root) Mode and download MinIO
+```sh
+sudo su
 
+wget https://dl.min.io/server/minio/release/linux-amd64/minio
+chmod +x minio
+```
+
+4. Create xfs file system on block devices and label them
+```sh
+mkfs.xfs -f /dev/sdb -L DISK1
+mkfs.xfs -f /dev/sdc -L DISK2
+
+```
+
+5. Create mount points for block devices
+```sh
+mkdir /mnt/disk1
+mkdir /mnt/disk2
+
+```
+
+6. Mount block devices to mountpoint
+```sh
+mount /dev/sdb /mnt/disk1
+mount /dev/sdc /mnt/disk2
+
+```
+
+7. Configure the file system
+```sh
+nano /etc/fstab
+
+# <file system>  <mount point>  <type>  <options>         <dump>  <pass>
+LABEL=DISK1      /mnt/disk1     xfs     defaults,noatime  0       2
+LABEL=DISK2      /mnt/disk2     xfs     defaults,noatime  0       2
+
+```
+
+8. Configure the network
+```sh
+nano /etc/hosts
+
+external-ip-1 minio1
+external-ip-2 minio2
+```
+
+9. Run MinIO
+```sh
+minio server --console-address ":9090" "http://minio{1...2}/mnt/disk{1...2}/minio"
+```
+
+## Project Demo on GCP (Ubuntu Docker)
+1. Create virtual machine instances on the Google Cloud Platform
+![1](https://github.com/LaansDole/unix-sysadm-MinIO/assets/88642920/c23208e8-e7ce-4415-b947-a1341d34aca4)
+
+2. Elevate to superuser
+```sh
+sudo su
+```
+
+3. Install docker
+```sh
+snap install minio
+```
+4. Install & run MinIO on docker
+```sh
+docker run -p 9000:9000 -d -p 9090:9090 -e "MINIO_ROOT_USER=minioadmin" -e "MINIO_ROOT_PASSWORD=minioadmin" quay.io/minio/minio server /data --console-address ":9090"
+```
